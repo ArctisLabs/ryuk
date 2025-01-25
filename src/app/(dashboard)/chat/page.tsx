@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Moon, Send, Sun } from "lucide-react";
 import { SpaceBetweenHorizontallyIcon } from "@radix-ui/react-icons";
 import { signOut, useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { ModeToggle } from "@/components/theme-comp";
 
 interface Artifact {
   message: string;
@@ -44,9 +48,9 @@ const technologyGroups: TechnologyGroup[] = [
         { name: "React", iconPath: "/icons/react.svg" },
         { name: "Vue", iconPath: "/icons/vue.svg" },
         { name: "Angular", iconPath: "/icons/angular.svg" },
-        { name: "Html", iconPath: "/icons/html.svg" }
+        { name: "Html", iconPath: "/icons/html.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "Backend",
@@ -57,7 +61,7 @@ const technologyGroups: TechnologyGroup[] = [
         { name: "Rust", iconPath: "/icons/rust.svg" },
         { name: "Python ", iconPath: "/icons/python.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "Database",
@@ -69,7 +73,7 @@ const technologyGroups: TechnologyGroup[] = [
         { name: "Redis", iconPath: "/icons/redis.svg" },
         { name: "Firebase", iconPath: "/icons/firebase.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "AI",
@@ -79,7 +83,7 @@ const technologyGroups: TechnologyGroup[] = [
         { name: "Claude", iconPath: "/icons/claude.png" },
         { name: "Gemini", iconPath: "/icons/gemini.png" },
       ],
-    ]
+    ],
   },
   {
     title: "File Storage",
@@ -90,36 +94,36 @@ const technologyGroups: TechnologyGroup[] = [
         { name: "Cloudinary", iconPath: "/icons/cloudinaryy.png" },
         { name: "Firebase", iconPath: "/icons/firebase.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "Authentication",
     options: [
       [
         { name: "Clerk", iconPath: "/icons/clerk.png" },
-        { name: "Supanbase", iconPath:"/icons/supabase.svg" },
+        { name: "Supanbase", iconPath: "/icons/supabase.svg" },
         { name: "Next Auth", iconPath: "/icons/nextjs.svg" },
-        { name: "Firebase", iconPath: "/icons/firebase.svg" }
+        { name: "Firebase", iconPath: "/icons/firebase.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "Payments",
     options: [
       [
-        { name: "Stripe", iconPath: "/icons/stripe.svg"},
-        { name: "PayPal", iconPath: "/icons/paypal.svg" }
+        { name: "Stripe", iconPath: "/icons/stripe.svg" },
+        { name: "PayPal", iconPath: "/icons/paypal.svg" },
       ],
-    ]
+    ],
   },
   {
     title: "Blockchain",
     options: [
       [
         { name: "Solana", iconPath: "/icons/solana.png" },
-        { name: "Ethereum", iconPath: "/icons/eth.svg" }
+        { name: "Ethereum", iconPath: "/icons/eth.svg" },
       ],
-    ]
+    ],
   },
 ];
 
@@ -136,6 +140,7 @@ export default function Sidebar() {
   const [inputValue, setInputValue] = useState("");
   const [openGroups, setOpenGroups] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { setTheme } = useTheme()
 
   const toggleSidebar = () => setIsOpen((prev) => !prev);
 
@@ -147,9 +152,15 @@ export default function Sidebar() {
     );
   };
 
-  const IconRenderer = ({ iconPath, className = "h-4 w-4" }: { iconPath: string; className?: string }) => {
+  const IconRenderer = ({
+    iconPath,
+    className = "h-4 w-4",
+  }: {
+    iconPath: string;
+    className?: string;
+  }) => {
     if (!iconPath) return null;
-    
+
     return (
       <Image
         src={iconPath || "/placeholder.svg"}
@@ -265,11 +276,12 @@ export default function Sidebar() {
               className="rounded-lg p-2 "
               aria-label="Close Sidebar"
             >
-              <SpaceBetweenHorizontallyIcon  className="h-5 w-5" />
+              <SpaceBetweenHorizontallyIcon className="h-5 w-5" />
             </button>
+              <ModeToggle />
           </div>
           {isOpen && (
-            <ScrollArea className="h-[calc(100vh-6rem)] px-4">
+            <ScrollArea className="h-[calc(100vh-8rem)] px-4">
               <div className="space-y-2">
                 {technologyGroups.map((group) => (
                   <div
@@ -311,6 +323,100 @@ export default function Sidebar() {
               </div>
             </ScrollArea>
           )}
+          <div className="relative flex items-center mt-3">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="bg-gray-600 w-[90%] h-[40px] ml-3 hover:bg-gray-500 text-white"
+              onClick={() => setIsLogoutPopupOpen(!isLogoutPopupOpen)}
+            >
+              <div className="flex items-center space-x-2 mb-4 mt-3">
+                {session?.user?.image && (
+                  <img
+                    src={session.user.image || "/placeholder.svg"}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <div>
+                  <p className="text-xs font-semibold">{session?.user?.name}</p>
+                  <p className="text-xs text-gray-300">
+                    {session?.user?.email}
+                  </p>
+                </div>
+              </div>
+            </Button>
+
+            {isLogoutPopupOpen && (
+              <div className="absolute bottom-full mb-2 left-3 bg-[#1c1c1c] text-white rounded-lg shadow-lg w-[280px] z-50">
+                <div className="p-4 space-y-4">
+                  <div className="flex items-center gap-3">
+                    {session?.user?.image && (
+                      <img
+                        src={session.user.image || "/placeholder.svg"}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-lg"
+                      />
+                    )}
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium">
+                        {session?.user?.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {session?.user?.email}
+                      </p>
+                      <p className="text-xs text-gray-400">Free</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm font-normal"
+                    >
+                      Switch Team
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm font-normal"
+                    >
+                      Billing
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm font-normal"
+                    >
+                      Settings
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-sm font-normal text-red-500"
+                      onClick={handleLogout}
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-xs text-gray-400 mb-2">Preferences</p>
+                    <div className="space-y-1">
+                      
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Language</span>
+                        <Button variant="ghost" className="text-sm font-normal">
+                          English
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button className="w-full bg-white text-black hover:bg-gray-200 dark:bg-white dark:text-black">
+                    Upgrade Plan
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </nav>
       </aside>
 

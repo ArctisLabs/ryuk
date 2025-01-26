@@ -1,0 +1,5 @@
+pymongo
+python-dotenv
+huggingface-hub
+rich
+aiohttp

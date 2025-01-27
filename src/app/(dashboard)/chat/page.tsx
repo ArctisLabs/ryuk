@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
+  Brain,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   Moon,
   Send,
   Sun,
+  X,
 } from "lucide-react";
 import { SpaceBetweenHorizontallyIcon } from "@radix-ui/react-icons";
 import { signOut, useSession } from "next-auth/react";
@@ -380,7 +382,7 @@ export default function Sidebar() {
           ) : (
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-col space-y-2 text-center">
-                {["B","O", "L", "T","A", "I"].map((letter, index) => (
+                {["B", "O", "L", "T", "A", "I"].map((letter, index) => (
                   <span
                     key={index}
                     className={`text-2xl font-semibold tracking-tighter bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent ${anta.className}`}
@@ -563,13 +565,20 @@ export default function Sidebar() {
               disabled={isLoading}
               className="flex-1 border-opacity-100"
             />
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-white text-black "
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            <div className="flex flex-col gap-1">
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-white text-black "
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+              <Button className="bg-white text-black ">
+                <Link href={"/prompts"}>
+                  <Brain className="h-4 w-4"/>
+                </Link>
+              </Button>
+            </div>
           </form>
         </div>
 
@@ -581,7 +590,22 @@ export default function Sidebar() {
         >
           {/* File tree section */}
           <div className="w-[200px] border-r border-[#323233] bg-[#252526]">
-            <div className="p-2 text-sm text-gray-400 border-b border-[#323233]">
+            <div className="p-2 text-sm text-gray-400 border-b border-[#323233] flex items-center gap-4 ">
+              {isRightPanelOpen ? (
+                <button
+                  onClick={() => setIsRightPanelOpen(false)}
+                  className="p-1 rounded-md hover:bg-[#2a2d2e]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsRightPanelOpen(true)}
+                  className="p-1 rounded-md hover:bg-[#2a2d2e]"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
               EXPLORER
             </div>
             <ScrollArea className="h-[calc(100vh-40px)]">
@@ -605,14 +629,18 @@ export default function Sidebar() {
               </div>
             </ScrollArea>
           </div>
-          
-          <button
-          onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-          className="absolute top-4 right-0 transform -translate-x-1/2 bg-gray-700/40 border border-gray-700/10 text-white p-2 rounded-md  transition-colors z-10"
-          aria-label={isRightPanelOpen ? "Close code panel" : "Open code panel"}
-        >
-          {isRightPanelOpen ? <CodeXml size={20} /> : <CodeXml  size={20} />}
-        </button>
+
+          {!isRightPanelOpen && (
+            <button
+              onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+              className="absolute top-4 right-0 transform -translate-x-1/2 bg-gray-700/40 border border-gray-700/10 text-white p-2 rounded-md  transition-colors z-10"
+              aria-label={
+                isRightPanelOpen ? "Close code panel" : "Open code panel"
+              }
+            >
+              <CodeXml size={20} />
+            </button>
+          )}
 
           {/* Code section */}
           <div className="flex-1">
@@ -626,15 +654,15 @@ export default function Sidebar() {
                 </div>
 
                 {/* Code content */}
-                  <div className="relative">
-                    <pre
-                      className="p-4 text-sm font-mono leading-[1.5] overflow-x-auto"
-                      style={{
-                        backgroundColor: "#1e1e1e",
-                        tabSize: 2,
-                      }}
-                    >
-                      <code>
+                <div className="relative">
+                  <pre
+                    className="p-4 text-sm font-mono leading-[1.5] overflow-x-auto"
+                    style={{
+                      backgroundColor: "#1e1e1e",
+                      tabSize: 2,
+                    }}
+                  >
+                    <code>
                       <ScrollArea className="flex-1">
                         {activeArtifacts[selectedFile].content
                           .split("\n")
@@ -651,20 +679,20 @@ export default function Sidebar() {
                               </span>
                             </div>
                           ))}
-                    </ScrollArea>
-                      </code>
-                    </pre>
-                    <Button
-                      onClick={() =>
-                        copyToClipboard(activeArtifacts[selectedFile].content)
-                      }
-                      className="absolute top-2 right-2 h-8 px-3 py-1 bg-[#2d2d2d] hover:bg-[#3e3e3e] text-xs text-gray-300 border-0"
-                      variant="ghost"
-                      size="sm"
-                    >
-                      Copy
-                    </Button>
-                  </div>
+                      </ScrollArea>
+                    </code>
+                  </pre>
+                  <Button
+                    onClick={() =>
+                      copyToClipboard(activeArtifacts[selectedFile].content)
+                    }
+                    className="absolute top-2 right-2 h-8 px-3 py-1 bg-[#2d2d2d] hover:bg-[#3e3e3e] text-xs text-gray-300 border-0"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    Copy
+                  </Button>
+                </div>
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CodeXml,
   FileIcon,
+  LogOut,
   Moon,
   Send,
   Sun,
@@ -22,6 +23,7 @@ import { useTheme } from "next-themes";
 import { ModeToggle } from "@/components/theme-comp";
 import { toast } from "sonner";
 import Link from "next/link";
+import { anta } from "@/components/ui/fonts";
 
 interface Artifact {
   filename: string;
@@ -324,7 +326,7 @@ export default function Sidebar() {
     <div className="flex h-screen">
       <aside
         className={`${
-          isOpen ? "w-60" : "w-0"
+          isOpen ? "w-60" : "w-14"
         } flex flex-col relative transition-all duration-300`}
       >
         <div className="absolute inset-0 bg-gradient-to-b bg-gray-700/10 rounded-r-2xl" />
@@ -334,14 +336,14 @@ export default function Sidebar() {
           <div className="flex items-center justify-between p-4">
             <button
               onClick={toggleSidebar}
-              className="rounded-lg p-2"
+              className="rounded-lg p-1"
               aria-label="Toggle Sidebar"
             >
               <SpaceBetweenHorizontallyIcon className="h-5 w-5" />
             </button>
           </div>
 
-          {isOpen && (
+          {isOpen ? (
             <ScrollArea className="h-[calc(100vh-8rem)] px-4">
               <div className="space-y-2">
                 {technologyGroups.map((group) => (
@@ -375,6 +377,20 @@ export default function Sidebar() {
                 ))}
               </div>
             </ScrollArea>
+          ) : (
+            <div className="flex flex-col items-center w-full">
+              <div className="flex flex-col space-y-2 text-center">
+                {["B","O", "L", "T","A", "I"].map((letter, index) => (
+                  <span
+                    key={index}
+                    className={`text-2xl font-semibold tracking-tighter bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent ${anta.className}`}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </div>
+              <LogOut className="mt-[20rem] w-5 h-5" />
+            </div>
           )}
 
           <div className="relative flex items-center mt-3">

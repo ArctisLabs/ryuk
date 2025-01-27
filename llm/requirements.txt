@@ -3,3 +3,5 @@ python-dotenv
 huggingface-hub
 rich
 aiohttp
+fastapi
+uvicorn

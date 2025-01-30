@@ -475,7 +475,7 @@ export default function Sidebar() {
               {["B", "O", "L", "T", "A", "I"].map((letter, index) => (
                 <span
                   key={index}
-                  className={`text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent ${anta.className}`}
+                  className={`text-2xl font-bold bg-gray-100 bg-clip-text text-transparent ${anta.className}`}
                 >
                   {letter}
                 </span>

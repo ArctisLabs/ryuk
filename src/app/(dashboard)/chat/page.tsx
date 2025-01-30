@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,16 +16,32 @@ import {
   Send,
   Sun,
   X,
+  Sparkles,
+  Settings,
+  CreditCard,
+  FileJson,
+  FileText,
+  FileCode,
+  File,
+  FolderIcon,
 } from "lucide-react";
 import { SpaceBetweenHorizontallyIcon } from "@radix-ui/react-icons";
 import { signOut, useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { ModeToggle } from "@/components/theme-comp";
 import { toast } from "sonner";
 import Link from "next/link";
 import { anta } from "@/components/ui/fonts";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CodePanel } from "@/components/code-panel/Codepanel";
 
 interface Artifact {
   filename: string;
@@ -140,6 +156,29 @@ const technologyGroups: TechnologyGroup[] = [
     ],
   },
 ];
+
+const getFileIcon = (filename: string) => {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "js":
+    case "jsx":
+    case "ts":
+    case "tsx":
+      return <FileCode className="h-4 w-4 text-yellow-500" />;
+    case "json":
+      return <FileJson className="h-4 w-4 text-yellow-300" />;
+    case "md":
+      return <FileText className="h-4 w-4 text-blue-400" />;
+    case "html":
+      return <FileCode className="h-4 w-4 text-orange-500" />;
+    case "css":
+      return <FileCode className="h-4 w-4 text-blue-500" />;
+    case "py":
+      return <FileCode className="h-4 w-4 text-green-500" />;
+    default:
+      return <File className="h-4 w-4 text-gray-400" />;
+  }
+};
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
@@ -328,36 +367,53 @@ export default function Sidebar() {
     <div className="flex h-screen">
       <aside
         className={`${
-          isOpen ? "w-60" : "w-14"
+          isOpen ? "w-60" : "w-16"
         } flex flex-col relative transition-all duration-300`}
       >
-        <div className="absolute inset-0 bg-gradient-to-b bg-gray-700/10 rounded-r-2xl" />
-        <div className="absolute inset-0 rounded-r-2xl border border-white/10 shadow-[0_0_90px_rgba(255,255,255,0.07)] backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/5 dark:bg-black/20 backdrop-blur-lg rounded-r-2xl" />
+        <div className="absolute inset-0 rounded-r-2xl border border-white/10 shadow-[0_0_90px_rgba(255,255,255,0.07)]" />
 
         <nav className="flex-1 relative z-10">
           <div className="flex items-center justify-between p-4">
-            <button
-              onClick={toggleSidebar}
-              className="rounded-lg p-1"
-              aria-label="Toggle Sidebar"
-            >
-              <SpaceBetweenHorizontallyIcon className="h-5 w-5" />
-            </button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={toggleSidebar}
+                    variant="ghost"
+                    className="rounded-lg p-2 hover:bg-white/10"
+                    aria-label="Toggle Sidebar"
+                  >
+                    <SpaceBetweenHorizontallyIcon className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isOpen ? "Collapse" : "Expand"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {isOpen && (
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <span className={`font-semibold ${anta.className}`}>
+                  BOLT AI
+                </span>
+              </div>
+            )}
           </div>
 
           {isOpen ? (
             <ScrollArea className="h-[calc(100vh-8rem)] px-4">
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {technologyGroups.map((group) => (
-                  <div
-                    key={group.title}
-                    className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-2 last:border-b-0"
-                  >
+                  <Card key={group.title} className="p-3 bg-white/5 border-0">
                     <button
                       onClick={() => toggleGroup(group.title)}
-                      className="flex items-center justify-between w-full text-left py-2 px-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="flex items-center justify-between w-full text-left py-2 px-1 rounded-md transition-colors"
                     >
-                      <span className="font-medium">{group.title}</span>
+                      <span className="font-medium flex items-center gap-2">
+                        {group.title}
+                      </span>
                       <ChevronDown
                         className={`h-4 w-4 transition-transform duration-200 ${
                           openGroups.includes(group.title) ? "rotate-180" : ""
@@ -365,146 +421,175 @@ export default function Sidebar() {
                       />
                     </button>
                     {openGroups.includes(group.title) && (
-                      <div className="grid grid-cols-2 gap-1 mt-2">
-                        {group.options.map((row, rowIndex) =>
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        {group.options.map((row) =>
                           row.map(
-                            (option, colIndex) =>
-                              option &&
-                              renderTechnologyOption(option, group.title)
+                            (option) =>
+                              option && (
+                                <TooltipProvider key={option.name}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        onClick={() =>
+                                          handleTechSelect(
+                                            group.title,
+                                            option.name
+                                          )
+                                        }
+                                        className={`p-2 rounded-lg flex gap-2 items-center transition-all ${
+                                          selectedTech[
+                                            group.title.toLowerCase() as keyof typeof selectedTech
+                                          ] === option.name
+                                            ? "bg-blue-500/20 text-blue-500"
+                                            : "hover:bg-white/5"
+                                        }`}
+                                      >
+                                        <Image
+                                          src={option.iconPath}
+                                          alt={option.name}
+                                          width={20}
+                                          height={20}
+                                          className="h-5 w-5"
+                                        />
+                                        <span className="text-sm">
+                                          {option.name}
+                                        </span>
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Select {option.name}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )
                           )
                         )}
                       </div>
                     )}
-                  </div>
+                  </Card>
                 ))}
               </div>
             </ScrollArea>
           ) : (
-            <div className="flex flex-col items-center w-full">
-              <div className="flex flex-col space-y-2 text-center">
-                {["B", "O", "L", "T", "A", "I"].map((letter, index) => (
-                  <span
-                    key={index}
-                    className={`text-2xl font-semibold tracking-tighter bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent ${anta.className}`}
-                  >
-                    {letter}
-                  </span>
-                ))}
-              </div>
-              <LogOut className="mt-[20rem] w-5 h-5" />
+            <div className="flex flex-col items-center gap-3 mt-4">
+              {["B", "O", "L", "T", "A", "I"].map((letter, index) => (
+                <span
+                  key={index}
+                  className={`text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent ${anta.className}`}
+                >
+                  {letter}
+                </span>
+              ))}
             </div>
           )}
 
-          <div className="relative flex items-center mt-3">
+          <div className="absolute bottom-0 left-0 right-0 p-4">
             <Button
-              variant="secondary"
-              size="icon"
-              className="bg-gray-600 w-[90%] h-[40px] ml-3 hover:bg-gray-500 text-white"
+              variant="ghost"
+              className="w-full flex items-center gap-3 hover:bg-white/10"
               onClick={() => setIsLogoutPopupOpen(!isLogoutPopupOpen)}
             >
-              <div className="flex items-center space-x-2 mb-4 mt-3">
-                {session?.user?.image && (
-                  <img
-                    src={session.user.image}
-                    alt="Profile"
-                    className="w-8 h-8 rounded-full"
-                  />
-                )}
-                <div>
-                  <p className="text-xs font-semibold">{session?.user?.name}</p>
-                  <p className="text-xs text-gray-300">
+              {session?.user?.image && (
+                <img
+                  src={session.user.image}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full ring-2 ring-white/20"
+                />
+              )}
+              {isOpen && (
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium truncate">
+                    {session?.user?.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
                     {session?.user?.email}
                   </p>
                 </div>
-              </div>
+              )}
             </Button>
 
             {isLogoutPopupOpen && (
-              <div className="absolute bottom-full mb-2 left-3 bg-[#1c1c1c] text-white rounded-lg shadow-lg w-[280px] z-50">
+              <Card className="absolute bottom-full mb-2 left-0 right-0 mx-4 bg-white/10 backdrop-blur-lg border-white/10">
                 <div className="p-4 space-y-4">
                   <div className="flex items-center gap-3">
                     {session?.user?.image && (
                       <img
                         src={session.user.image}
                         alt="Profile"
-                        className="w-10 h-10 rounded-lg"
+                        className="w-12 h-12 rounded-lg ring-2 ring-white/20"
                       />
                     )}
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium">
-                        {session?.user?.name}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {session?.user?.email}
-                      </p>
-                      <p className="text-xs text-gray-400">Free</p>
+                    <div>
+                      <p className="font-medium">{session?.user?.name}</p>
+                      <Badge variant="secondary" className="mt-1">
+                        Free Plan
+                      </Badge>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-sm font-normal text-gray-300 hover:text-gray-100"
+                      className="w-full justify-start gap-2 text-sm hover:bg-white/10"
                     >
+                      <CreditCard className="h-4 w-4" />
                       Billing
                     </Button>
-                    <Link href={"/settings"}>
+                    <Link href="/settings">
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-sm font-normal text-gray-300 hover:text-gray-100"
+                        className="w-full justify-start gap-2 text-sm hover:bg-white/10"
                       >
+                        <Settings className="h-4 w-4" />
                         Settings
                       </Button>
                     </Link>
                     <Button
                       variant="ghost"
-                      className="w-full justify-start text-sm font-normal text-red-400 hover:text-red-300"
+                      className="w-full justify-start gap-2 text-sm text-red-400 hover:bg-red-500/10"
                       onClick={handleLogout}
                     >
+                      <LogOut className="h-4 w-4" />
                       Sign Out
                     </Button>
                   </div>
 
-                  <div className="pt-2 border-t border-gray-800">
-                    <p className="text-xs text-gray-400 mb-2">Preferences</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between px-2">
-                        <span className="text-sm text-gray-300">Theme</span>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 w-8 p-0 bg-white text-black"
-                            onClick={() => setTheme("light")}
-                          >
-                            <Sun className="h-4 w-4" />
-                            <span className="sr-only">Light Mode</span>
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 w-8 p-0 bg-white text-black"
-                            onClick={() => setTheme("dark")}
-                          >
-                            <Moon className="h-4 w-4" />
-                            <span className="sr-only">Dark Mode</span>
-                          </Button>
-                        </div>
-                      </div>
+                  <div className="pt-4 border-t border-white/10">
+                    <p className="text-xs text-gray-400 mb-2">Theme</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => setTheme("light")}
+                      >
+                        <Sun className="h-4 w-4" />
+                        Light
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => setTheme("dark")}
+                      >
+                        <Moon className="h-4 w-4" />
+                        Dark
+                      </Button>
                     </div>
                   </div>
 
-                  <Button className="w-full bg-white text-black hover:bg-gray-200 dark:bg-white dark:text-black">
-                    <Link href={"/plans"}>Upgrade Plan</Link>
-                  </Button>
+                  <Link href="/plans">
+                    <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         </nav>
       </aside>
 
-      {/* Main content area */}
       <div className="flex-1 flex relative">
         <div
           className={`${
@@ -575,61 +660,18 @@ export default function Sidebar() {
               </Button>
               <Button className="bg-white text-black ">
                 <Link href={"/prompts"}>
-                  <Brain className="h-4 w-4"/>
+                  <Brain className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
           </form>
         </div>
 
-        {/* Right panel */}
         <div
           className={`${
             isRightPanelOpen ? "w-[50%]" : "w-0"
           } transition-all duration-300 overflow-hidden bg-[#1e1e1e] flex`}
         >
-          {/* File tree section */}
-          <div className="w-[200px] border-r border-[#323233] bg-[#252526]">
-            <div className="p-2 text-sm text-gray-400 border-b border-[#323233] flex items-center gap-4 ">
-              {isRightPanelOpen ? (
-                <button
-                  onClick={() => setIsRightPanelOpen(false)}
-                  className="p-1 rounded-md hover:bg-[#2a2d2e]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsRightPanelOpen(true)}
-                  className="p-1 rounded-md hover:bg-[#2a2d2e]"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
-              EXPLORER
-            </div>
-            <ScrollArea className="h-[calc(100vh-40px)]">
-              <div className="p-2">
-                {activeArtifacts?.map((artifact, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setSelectedFile(index);
-                    }}
-                    className={`flex items-center gap-2 w-full px-2 py-1 text-sm rounded-sm hover:bg-[#2a2d2e] ${
-                      selectedFile === index ? "bg-[#37373d]" : ""
-                    }`}
-                  >
-                    <FileIcon className="h-4 w-4 text-[#7a7a7a]" />
-                    <span className="text-[#cccccc] truncate text-left">
-                      {artifact.filename}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-
           {!isRightPanelOpen && (
             <button
               onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
@@ -646,53 +688,21 @@ export default function Sidebar() {
           <div className="flex-1">
             {activeArtifacts && activeArtifacts[selectedFile] && (
               <div className="h-full flex flex-col">
-                {/* File header */}
-                <div className="flex items-center px-4 py-2 bg-[#252526] border-b border-[#323233]">
-                  <span className="text-sm text-gray-300">
-                    {activeArtifacts[selectedFile].filename}
-                  </span>
-                </div>
-
-                {/* Code content */}
-                <div className="relative">
-                  <pre
-                    className="p-4 text-sm font-mono leading-[1.5] overflow-x-auto"
-                    style={{
-                      backgroundColor: "#1e1e1e",
-                      tabSize: 2,
-                    }}
-                  >
-                    <code>
-                      <ScrollArea className="flex-1">
-                        {activeArtifacts[selectedFile].content
-                          .split("\n")
-                          .map((line, i) => (
-                            <div key={i} className="flex">
-                              <span className="inline-block w-12 pr-4 text-right text-[#858585] select-none">
-                                {i + 1}
-                              </span>
-                              <span
-                                className="flex-1 pl-4"
-                                style={{ color: "#d4d4d4" }}
-                              >
-                                {line || "\n"}
-                              </span>
-                            </div>
-                          ))}
-                      </ScrollArea>
-                    </code>
-                  </pre>
-                  <Button
-                    onClick={() =>
-                      copyToClipboard(activeArtifacts[selectedFile].content)
+                <CodePanel
+                  isOpen={isRightPanelOpen}
+                  onClose={() => setIsRightPanelOpen(false)}
+                  artifacts={activeArtifacts}
+                  selectedFile={activeArtifacts?.[selectedFile]?.filename}
+                  onFileSelect={(filename, content) => {
+                    const index =
+                      activeArtifacts?.findIndex(
+                        (a) => a.filename === filename
+                      ) ?? -1;
+                    if (index !== -1) {
+                      setSelectedFile(index);
                     }
-                    className="absolute top-2 right-2 h-8 px-3 py-1 bg-[#2d2d2d] hover:bg-[#3e3e3e] text-xs text-gray-300 border-0"
-                    variant="ghost"
-                    size="sm"
-                  >
-                    Copy
-                  </Button>
-                </div>
+                  }}
+                />
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from huggingface_hub import InferenceClient
@@ -10,20 +10,24 @@ import json
 from datetime import datetime
 from bson import ObjectId
 import uvicorn
+from structure import ProjectStructureManager
 
+# Load environment variables
 load_dotenv()
 
+# Initialize FastAPI app
 app = FastAPI(title="Code Generator API")
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
+# Pydantic models
 class GenerateRequest(BaseModel):
     frontend: str
     backend: str
@@ -37,6 +41,12 @@ class GenerateRequest(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 4096
 
+    def get_tech_stack(self) -> Dict[str, str]:
+        """Convert request to tech stack dictionary, excluding non-tech fields"""
+        return {k: v for k, v in self.model_dump().items() 
+                if k not in ['prompt', 'temperature', 'max_tokens'] 
+                and v is not None}
+
 class Artifact(BaseModel):
     filename: str
     content: str
@@ -47,7 +57,7 @@ class GenerateResponse(BaseModel):
     final_code: dict
     auditor_report: dict
 
-
+# MongoDB connection handler
 class MongoConnection:
     def __init__(self):
         self.client = None
@@ -67,13 +77,12 @@ class MongoConnection:
         if self.client:
             self.client.close()
 
-
+# Initialize connections
 mongo = MongoConnection()
 hf_client = InferenceClient(
     api_key=os.getenv("HUGGINGFACE_API_KEY"),
     model="Qwen/Qwen2.5-Coder-32B-Instruct"
 )
-
 
 class MongoJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -81,70 +90,93 @@ class MongoJSONEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, datetime):
             return obj.isoformat()
-        return super().default(obj)
+        return json.JSONEncoder.default(self, obj)
+
+def serialize_mongo_data(data: any) -> any:
+    """Recursively serialize MongoDB data types"""
+    if isinstance(data, list):
+        return [serialize_mongo_data(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: serialize_mongo_data(value) for key, value in data.items()}
+    elif isinstance(data, ObjectId):
+        return str(data)
+    elif isinstance(data, datetime):
+        return data.isoformat()
+    return data
 
 async def find_similar_projects(tech_stack: dict) -> List[dict]:
+    """Find similar projects from MongoDB based on tech stack"""
     try:
         query = {
             "$or": [
-                {"frontend": tech_stack['frontend']},
-                {"backend": tech_stack['backend']},
-                {"database": tech_stack['database']},
-                {"ai": tech_stack['ai']},
-                {"authentication": tech_stack['authentication']},
-                {"payments": tech_stack['payments']},
-                {"blockchain": tech_stack['blockchain']}
+                {key: value} for key, value in tech_stack.items() 
+                if value and key != "blockchain"
             ]
         }
         
-        results = mongo.db.training_data.find(
+        results = list(mongo.db.training_data.find(
             query,
             {'embedding': 0}
-        )
+        ))
         
-        similar_projects = list(results)
+        serialized_results = serialize_mongo_data(results)
         
-        if not similar_projects:
+        if not serialized_results:
             broader_query = {
                 "$or": [
                     {"backend": tech_stack['backend']},
                     {"appType": {"$regex": "storage", "$options": "i"}}
                 ]
             }
-            results = mongo.db.training_data.find(
+            broader_results = list(mongo.db.training_data.find(
                 broader_query,
                 {'embedding': 0}
-            )
-            similar_projects = list(results)
+            ))
+            serialized_results = serialize_mongo_data(broader_results)
             
-        return similar_projects
+        return serialized_results
             
     except Exception as e:
         print(f"Error finding similar projects: {e}")
         return []
 
-async def generate_code_from_prompt(tech_stack: dict, similar_projects: List[dict], prompt: str) -> dict:
+async def enhance_project_structure(
+    base_structure: List[Dict],
+    tech_stack: Dict,
+    similar_projects: List[Dict],
+    prompt: str,
+    temperature: float,
+    max_tokens: int
+) -> Dict:
+    """Enhance base project structure using AI"""
     try:
-        serializable_projects = json.loads(
-            json.dumps(similar_projects, cls=MongoJSONEncoder)
-        )
-        
-        system_prompt = f"""Generate a complete project structure based on:
+        serialized_base = serialize_mongo_data(base_structure)
+        serialized_tech = serialize_mongo_data(tech_stack)
+        serialized_similar = serialize_mongo_data(similar_projects)
 
-Tech Stack:
-{json.dumps(tech_stack, indent=2)}
+        system_prompt = f"""Enhance and complete this project structure:
 
-Similar Projects:
-{json.dumps(serializable_projects, indent=2)}
+Current Structure:
+{json.dumps(serialized_base, indent=2)}
 
-User Request: {prompt}
+Tech Stack Selected:
+{json.dumps(serialized_tech, indent=2)}
 
-Generate a complete project structure including:
-1. All necessary files with their content
-2. Setup instructions
-3. Dependencies
+Similar Projects Reference:
+{json.dumps(serialized_similar, indent=2)}
 
-Return ONLY a JSON response in this exact format:
+User's Request: {prompt}
+
+Requirements:
+1. Maintain the exact structure provided above
+2. Add necessary implementation code to existing files
+3. Only create new files if absolutely necessary
+4. Follow framework-specific best practices
+5. Include proper error handling and type safety
+6. Add comprehensive documentation and comments
+7. Ensure proper integration between all layers
+
+Generate ONLY a JSON response in this format:
 {{
     "files": [
         {{
@@ -153,82 +185,130 @@ Return ONLY a JSON response in this exact format:
             "language": "programming language"
         }}
     ],
-    "setup_instructions": "setup guide",
+    "setup_instructions": "detailed setup guide including environment variables and dependencies",
     "dependencies": {{
-        "dependency": "version"
+        "package_name": "version"
     }}
 }}"""
 
         response = hf_client.chat_completion(
             model="Qwen/Qwen2.5-Coder-32B-Instruct",
             messages=[
-                {"role": "system", "content": "You are an expert full-stack developer."},
+                {
+                    "role": "system", 
+                    "content": "You are an expert full-stack developer specializing in modern web frameworks and best practices."
+                },
                 {"role": "user", "content": system_prompt}
             ],
-            temperature=0.7,
-            max_tokens=4096
+            temperature=temperature,
+            max_tokens=max_tokens
         )
         
-        content = response.choices[0].message.content
-        
+        if not response or not response.choices:
+            return {
+                "files": [],
+                "setup_instructions": "Follow setup instructions in generated files",
+                "dependencies": {}
+            }
+            
         try:
-            return json.loads(content)
-        except json.JSONDecodeError:
+            content = response.choices[0].message.content
             cleaned_content = content.strip().strip('`').strip()
             if cleaned_content.startswith('json'):
                 cleaned_content = cleaned_content[4:]
             return json.loads(cleaned_content)
+        except (json.JSONDecodeError, AttributeError) as e:
+            print(f"Error parsing AI response: {e}")
+            return {
+                "files": [],
+                "setup_instructions": "Follow setup instructions in generated files",
+                "dependencies": {}
+            }
             
     except Exception as e:
-        print(f"Error generating code: {e}")
-        return None
+        print(f"Error enhancing project structure: {e}")
+        return {
+            "files": [],
+            "setup_instructions": "Follow setup instructions in generated files",
+            "dependencies": {}
+        }
+
 
 @app.on_event("startup")
 async def startup_event():
     await mongo.connect()
-    print("Connected to MongoDB!")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     await mongo.close()
 
-# API endpoints
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_project(request: GenerateRequest):
     try:
-        tech_stack = {k: v for k, v in request.dict().items() 
-                     if k not in ['prompt', 'temperature', 'max_tokens'] and v is not None}
+        # Get tech stack from request
+        tech_stack = request.get_tech_stack()
         
+        # Initialize structure manager and generate base structure
+        structure_manager = ProjectStructureManager()
+        base_structure = structure_manager.generate_project_structure(tech_stack)
+        
+        # Find similar projects
         similar_projects = await find_similar_projects(tech_stack)
         
-        if not similar_projects:
-            return GenerateResponse(
-                message="No similar projects found, generating from scratch.",
-                final_code={"artifacts": []},
-                auditor_report={
-                    "vulnerabilities_found": False,
-                    "vulnerabilities_list": [],
-                    "recommendations": ""
-                }
-            )
+        # Generate enhanced structure
+        enhanced_structure = await enhance_project_structure(
+            base_structure,
+            tech_stack,
+            similar_projects,
+            request.prompt,
+            request.temperature,
+            request.max_tokens
+        )
         
-        result = await generate_code_from_prompt(tech_stack, similar_projects, request.prompt)
+        # Ensure we have a valid enhanced_structure
+        if not enhanced_structure:
+            enhanced_structure = {
+                "files": [],
+                "setup_instructions": "Follow setup instructions in generated files",
+                "dependencies": {}
+            }
         
-        if not result:
-            raise HTTPException(status_code=500, detail="Failed to generate code")
-            
+        # Merge base structure with AI enhancements
+        final_structure = []
+        base_files = {f["filename"]: f for f in base_structure}
+        
+        # Process each file from AI response
+        for file in enhanced_structure.get("files", []):
+            if file["filename"] in base_files:
+                base_files[file["filename"]].update(file)
+                final_structure.append(base_files[file["filename"]])
+            else:
+                final_structure.append(file)
+        
+        # Add remaining base files
+        for base_file in base_structure:
+            if base_file["filename"] not in {f["filename"] for f in final_structure}:
+                final_structure.append(base_file)
+        
+        # Sort files for consistency
+        final_structure.sort(key=lambda x: x["filename"])
+        
         return GenerateResponse(
-            message="Code generated successfully",
-            final_code={"artifacts": result.get("files", [])},
+            message="Project generated successfully!",
+            final_code={"artifacts": final_structure},
             auditor_report={
                 "vulnerabilities_found": False,
                 "vulnerabilities_list": [],
-                "recommendations": result.get("setup_instructions", "")
+                "recommendations": enhanced_structure.get("setup_instructions", "Follow setup instructions in generated files")
             }
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in generate_project: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to generate project: {str(e)}"
+        )
 
 @app.get("/health")
 async def health_check():

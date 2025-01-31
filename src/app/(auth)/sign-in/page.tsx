@@ -4,14 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
 import Link from "next/link";
@@ -29,7 +22,7 @@ const SignInSchema = z.object({
 
 type SignInFormData = z.infer<typeof SignInSchema>;
 
-const Page: React.FC = () => {
+const SignInPage = () => {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -45,15 +38,26 @@ const Page: React.FC = () => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await signIn("google", {
+      const result = await signIn("google", {
+        redirect: false,
         callbackUrl: "/chat",
       });
+
+      if (result?.error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
+      } else if (result?.url) {
+        router.push(result.url);
+      }
     } catch (error) {
       console.error("Google signin error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Unable to sign in with Google. Please try again.",
+        description: "Unable to sign in with Google",
       });
     } finally {
       setLoading(false);
@@ -63,15 +67,55 @@ const Page: React.FC = () => {
   const handleGithub = async () => {
     setLoading(true);
     try {
-      await signIn("github", {
+      const result = await signIn("github", {
+        redirect: false,
         callbackUrl: "/chat",
       });
+
+      if (result?.error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
+      } else if (result?.url) {
+        router.push(result.url);
+      }
     } catch (error) {
       console.error("GitHub signin error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Unable to sign in with GitHub. Please try again.",
+        description: "Unable to sign in with GitHub",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmit = async (data: SignInFormData) => {
+    setLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+
+      if (result?.error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Invalid credentials",
+        });
+      } else {
+        router.push("/chat");
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred during sign in",
       });
     } finally {
       setLoading(false);
@@ -90,7 +134,7 @@ const Page: React.FC = () => {
               alt="Kuiper logo"
               className="mb-4"
             />
-            <h2 className="text-3xl font-semibold">Welcome </h2>
+            <h2 className="text-3xl font-semibold">Welcome</h2>
             <span className="text-sm text-gray-400 mt-1">
               Enter your email and password to sign in!
             </span>
@@ -131,7 +175,7 @@ const Page: React.FC = () => {
           </div>
 
           <Form {...form}>
-            <form className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -157,9 +201,7 @@ const Page: React.FC = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white text-sm">
-                      Password
-                    </FormLabel>
+                    <FormLabel className="text-white text-sm">Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -177,7 +219,10 @@ const Page: React.FC = () => {
               <Button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 rounded-md text-white"
-              > SignIn</Button>
+                disabled={loading}
+              >
+                Sign In
+              </Button>
             </form>
           </Form>
 
@@ -196,4 +241,4 @@ const Page: React.FC = () => {
   );
 };
 
-export default Page;
+export default SignInPage;

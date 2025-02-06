@@ -11,7 +11,7 @@ export default function Navbar() {
         <div className="container flex h-14 items-center">
           <div className="flex items-center gap-2 mr-8">
             {/* <Image src="/logo.svg" alt="mainlogo" height={20} width={20} className="text-green-400"/> */}
-            <span className={`font-semibold text-xl ${anta.className}`}>BOLT</span>
+            <span className={`font-semibold text-xl ${anta.className}`}>KINETIC</span>
           </div>
           
           <nav className="flex items-center gap-6 text-sm">          

@@ -396,7 +396,7 @@ export default function Sidebar() {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-yellow-500" />
                 <span className={`font-semibold ${anta.className}`}>
-                  BOLT AI
+                  KINETIC AI
                 </span>
               </div>
             )}
@@ -472,7 +472,7 @@ export default function Sidebar() {
             </ScrollArea>
           ) : (
             <div className="flex flex-col items-center gap-3 mt-4">
-              {["B", "O", "L", "T", "A", "I"].map((letter, index) => (
+              {["K", "I", "N", "E", "T","I","C"].map((letter, index) => (
                 <span
                   key={index}
                   className={`text-2xl font-bold bg-gray-100 bg-clip-text text-transparent ${anta.className}`}

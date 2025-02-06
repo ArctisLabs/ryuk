@@ -107,7 +107,7 @@ export default function Hero(){
             <span className="text-purple-500 text-sm">Introducing the future of Coding</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Introducing <span className="text-purple-500">Bolt AI</span>
+            Introducing <span className="text-purple-500">Kinetic AI</span>
             <br />
             Your AI-Powered Code Writer
           </h1>

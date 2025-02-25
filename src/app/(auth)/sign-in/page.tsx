@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { Github } from "lucide-react";
@@ -24,7 +24,6 @@ type SignInFormData = z.infer<typeof SignInSchema>;
 
 const SignInPage = () => {
   const router = useRouter();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<SignInFormData>({
@@ -44,21 +43,13 @@ const SignInPage = () => {
       });
 
       if (result?.error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error,
-        });
+        toast.error(result.error)
       } else if (result?.url) {
         router.push(result.url);
       }
     } catch (error) {
       console.error("Google signin error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unable to sign in with Google",
-      });
+      toast.error("Unable to sigin with google")
     } finally {
       setLoading(false);
     }
@@ -73,21 +64,13 @@ const SignInPage = () => {
       });
 
       if (result?.error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error,
-        });
+        toast.error(result.error)
       } else if (result?.url) {
         router.push(result.url);
       }
     } catch (error) {
       console.error("GitHub signin error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unable to sign in with GitHub",
-      });
+      toast.error("Unable to singin with github")
     } finally {
       setLoading(false);
     }
@@ -103,20 +86,12 @@ const SignInPage = () => {
       });
 
       if (result?.error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Invalid credentials",
-        });
+        toast.error("Invalid creds")
       } else {
         router.push("/chat");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An error occurred during sign in",
-      });
+      toast.error("An error occurred during sign in")
     } finally {
       setLoading(false);
     }

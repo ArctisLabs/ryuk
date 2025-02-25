@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,6 @@ type SignupFormData = z.infer<typeof SignupUserSchema>;
 
 const Signup = () => {
   const router = useRouter();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<SignupFormData>({
@@ -60,11 +59,7 @@ const Signup = () => {
       });
     } catch (error) {
       console.error("Google signin error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unable to sign in with Google. Please try again.",
-      });
+      toast.error("Unable to sign in with Google. Please try again.")
     } finally {
       setLoading(false);
     }
@@ -78,11 +73,7 @@ const Signup = () => {
       });
     } catch (error) {
       console.error("GitHub signin error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Unable to sign in with GitHub. Please try again.",
-      });
+      toast.error("Unable to sign in with GitHub. Please try again.")
     } finally {
       setLoading(false);
     }
@@ -111,24 +102,13 @@ const Signup = () => {
       });
 
       if (signInResult?.error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Signup successful, but auto-login failed",
-        });
+        toast.error("Signup successful, but auto-login failed")
         router.push("/sign-in");
       } else {
         router.push("/chat");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
-      });
+      toast.error("An unexpected error occurred")
     } finally {
       setLoading(false);
     }

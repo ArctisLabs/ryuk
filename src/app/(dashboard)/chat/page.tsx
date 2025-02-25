@@ -472,7 +472,7 @@ export default function Sidebar() {
             </ScrollArea>
           ) : (
             <div className="flex flex-col items-center gap-3 mt-4">
-              {["K", "I", "N", "E", "T","I","C"].map((letter, index) => (
+              {["R","Y","U","K","A","I"].map((letter, index) => (
                 <span
                   key={index}
                   className={`text-2xl font-bold bg-gray-100 bg-clip-text text-transparent ${anta.className}`}
@@ -509,7 +509,7 @@ export default function Sidebar() {
             </Button>
 
             {isLogoutPopupOpen && (
-              <Card className="absolute bottom-full mb-2 left-0 right-0 mx-4 bg-white/10 backdrop-blur-lg border-white/10">
+              <Card className="absolute bottom-full mb-2 left-0 right-0 mx-4 bg-black border-white/10">
                 <div className="p-4 space-y-4">
                   <div className="flex items-center gap-3">
                     {session?.user?.image && (
@@ -554,7 +554,7 @@ export default function Sidebar() {
                     </Button>
                   </div>
 
-                  <div className="pt-4 border-t border-white/10">
+                  <div className="flex pt-4 border-t border-white/10 items-center gap-12">
                     <p className="text-xs text-gray-400 mb-2">Theme</p>
                     <div className="flex gap-2">
                       <Button
@@ -564,7 +564,6 @@ export default function Sidebar() {
                         onClick={() => setTheme("light")}
                       >
                         <Sun className="h-4 w-4" />
-                        Light
                       </Button>
                       <Button
                         variant="outline"
@@ -573,7 +572,6 @@ export default function Sidebar() {
                         onClick={() => setTheme("dark")}
                       >
                         <Moon className="h-4 w-4" />
-                        Dark
                       </Button>
                     </div>
                   </div>

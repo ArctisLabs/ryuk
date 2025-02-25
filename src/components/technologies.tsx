@@ -4,7 +4,7 @@ import {useState} from 'react'
 
 export default function Technologies(){
   return (
-    <section className="py-20 px-4 bg-black/50 w-[70%]">
+    <section className="my-20 py-20 px-4 bg-black/50 w-[70%]">
         <div className="container">
           <div className="flex flex-col md:flex-row items-start justify-between mb-12">
             <div>
